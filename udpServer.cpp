@@ -8,13 +8,47 @@
 
 using namespace std;
 
+//chatting function
+void serverChat(int serverSocket, struct sockaddr_in clientAdd )
+{
+    char message[1024];
+    int n;
+    socklen_t add_size;
+    add_size= sizeof(clientAdd);
+
+    for (;;)
+    {
+        bzero(message,1024);
+
+        //Receving message from client
+        recvfrom(serverSocket, message, sizeof(message), 0, ( struct sockaddr *) &clientAdd,&add_size);
+
+        //Printing client's message
+        cout<<"Client: "<<message<<endl;
+        bzero(message,1024);
+        cout<<"Enter your message: ";
+        n=0;
+        while ((message[n++] = getchar()) != '\n');
+
+        //sending message to client
+        sendto(serverSocket, message, sizeof(message), 0, (const struct sockaddr *) &clientAdd,add_size);
+
+        if(strncmp(message,"exit",4)==0)
+        {
+            cout<<"Exiting chat from server side"<<endl;
+            break;
+        }
+
+    }
+
+}
 
 int main()
 {
     int welcomeSocket;
     int newSocket;
     struct sockaddr_in serverAdd;
-    struct sockaddr_storage serverStorage;
+    struct sockaddr_in clientAdd;
     socklen_t add_size;
 
     //creating server socket
@@ -34,6 +68,8 @@ int main()
     serverAdd.sin_addr.s_addr= inet_addr("127.0.0.1");
     memset(serverAdd.sin_zero,'\0',sizeof(serverAdd.sin_zero));
 
+    memset(&clientAdd, 0, sizeof(clientAdd));
+
     //Binding address structure to the socket
     if(bind(welcomeSocket,(struct sockaddr*)&serverAdd,sizeof(serverAdd))!=0)
     {
@@ -43,7 +79,11 @@ int main()
     else
         cout<<"Socket successfully binded"<<endl;
 
+    //calling chatting function
+    serverChat(welcomeSocket,clientAdd);
 
+    //closing the socket
+    close(welcomeSocket);
 
     return 0;
 }
