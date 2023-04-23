@@ -3,9 +3,40 @@
 #include<sys/types.h>
 #include<netinet/in.h>
 #include<string.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 using namespace std;
 
+//chatting function
+void clientChat(int clientSocket)
+{
+    char message[1024];
+    int n;
+
+    for(;;)
+    {
+        bzero(message,1024);
+        cout<<"Enter your message: ";
+        n=0;
+        while ((message[n++] = getchar()) != '\n');
+
+        //sending message to server
+        send(clientSocket,message,sizeof(message),0);
+        bzero(message,sizeof(message));
+
+        //receiveing message from client
+        recv(clientSocket,message,sizeof(message),0);
+        cout<<"Server: "<<message<<endl;
+
+        if(strncmp(message,"exit",4)==0)
+        {
+            cout<<"Exiting chat from client side"<<endl;
+            break;
+        }
+    }
+
+}
 
 int main()
 {
@@ -40,7 +71,11 @@ int main()
     else
         cout<<"Connected to the server"<<endl;
     
+    //calling chatting function
+    clientChat(clientSocket);
 
+    //closing the socket
+    close(clientSocket);
 
 
     return 0;
