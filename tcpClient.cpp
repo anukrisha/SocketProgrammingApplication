@@ -5,38 +5,84 @@
 #include<string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include<fstream>
+#define SIZE 1024
 using namespace std;
+
+//Function for sending file
+void send_file(FILE *fp, int sockfd)
+{
+  int n;
+  char data[SIZE] = {0};
+ 
+  while(fgets(data, SIZE, fp) != NULL) 
+  {
+    if (send(sockfd, data, sizeof(data), 0) == -1) 
+    {
+      cout<<"Error in sending file"<<endl;
+      exit(0);
+    }
+    bzero(data, SIZE);
+  }
+}
+
+void clientfile(int clientSocket)
+{
+
+    //char *filename= new char[1024];
+    cout<<"Input the file name: ";
+    //fgets(filename, 1024, stdin);
+    string filename;
+    cin>>filename;
+
+    FILE *fp;
+    fp = fopen(filename.c_str(), "r");
+    if (fp == NULL) 
+    {
+        cout<<"Error in reading file."<<endl;
+        exit(0);
+    }
+ 
+    send_file(fp, clientSocket);
+    cout<<"File sent successfully"<<endl;
+ 
+}
 
 //chatting function
 void clientChat(int clientSocket)
 {
-    char message[1024];
+
+    
+    char buffer[1024];
     int n;
 
     for(;;)
     {
-        bzero(message,1024);
-        cout<<"Enter your message: ";
+        bzero(buffer,1024);
         n=0;
-        while ((message[n++] = getchar()) != '\n');
+
+        cout<<"Enter your message: ";
+        while ((buffer[n++] = getchar()) != '\n');
 
         //sending message to server
-        send(clientSocket,message,sizeof(message),0);
-        bzero(message,sizeof(message));
+        send(clientSocket,buffer,sizeof(buffer),0);
+        bzero(buffer,sizeof(buffer));
 
-        //receiveing message from client
-        recv(clientSocket,message,sizeof(message),0);
-        cout<<"Server: "<<message<<endl;
+        recv(clientSocket,buffer,sizeof(buffer),0);
+        cout<<"Server: "<<buffer<<endl;
+        
 
-        if(strncmp(message,"exit",4)==0)
+        if(strncmp(buffer,"exit",4)==0)
         {
             cout<<"Exiting chat from client side"<<endl;
             break;
         }
+
     }
 
 }
+
+
 
 int main()
 {
@@ -71,9 +117,26 @@ int main()
     else
         cout<<"Connected to the server"<<endl;
     
-    //calling chatting function
-    clientChat(clientSocket);
+    char c[1024];
+    int choice;
+ 
+    recv(clientSocket,c,sizeof(c),0);
+    cout<<c;
+    cin>>choice;
+    send(clientSocket,&choice,sizeof(choice),0);
 
+    if (choice==0)
+    {
+       
+        //calling chatting function
+        clientChat(clientSocket);
+    }
+    else if(choice==1)
+    {
+        clientfile(clientSocket);
+    }
+
+    
     //closing the socket
     close(clientSocket);
 

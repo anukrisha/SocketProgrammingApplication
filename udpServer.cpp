@@ -5,7 +5,8 @@
 #include<string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include<fstream>
+#define SIZE 1024
 using namespace std;
 
 //chatting function
@@ -40,6 +41,46 @@ void serverChat(int serverSocket, struct sockaddr_in clientAdd )
         }
 
     }
+
+}
+
+void write_file(int serverSocket, struct sockaddr_in clientAdd)
+{
+  FILE *fp;
+  char *filename = "server_udp.txt";
+  int n;
+  char buffer[SIZE];
+  socklen_t add_size;
+
+  // Creating a file.
+  fp = fopen(filename, "w");
+
+  // Receiving the data and writing it into the file.
+  while(1){
+
+    add_size= sizeof(clientAdd);
+    n = recvfrom(serverSocket, buffer, SIZE, 0, ( struct sockaddr *) &clientAdd,&add_size);
+
+    if (strcmp(buffer, "END") == 0){
+      break;
+      return;
+    }
+
+    //printf("[RECEVING] Data: %s", buffer);
+    fprintf(fp, "%s", buffer);
+    bzero(buffer, SIZE);
+
+  }
+
+  fclose(fp);
+  return;
+}
+
+void serverfile(int serverSocket, struct sockaddr_in clientAdd )
+{
+    cout<<"File receiving started."<<endl;
+    write_file(serverSocket, clientAdd);
+    cout<<"File received succesfully."<<endl;
 
 }
 
@@ -81,6 +122,7 @@ int main()
 
     //calling chatting function
     serverChat(welcomeSocket,clientAdd);
+    //serverfile(welcomeSocket,clientAdd);
 
     //closing the socket
     close(welcomeSocket);
